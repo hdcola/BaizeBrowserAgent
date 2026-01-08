@@ -1,0 +1,30 @@
+{
+  "extensionName": {
+    "message": "Baize Browser Agent",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "An AI-powered browser agent built with WXT and React.",
+    "description": "Description of the extension"
+  },
+  "cardTitle": {
+    "message": "WXT + React",
+    "description": "Title in the popup card"
+  },
+  "readTheDocs": {
+    "message": "Click on the WXT and React logos to learn more",
+    "description": "Text directing users to documentation"
+  },
+  "editPrompt": {
+    "message": "Edit",
+    "description": "Edit instruction start"
+  },
+  "andSavePrompt": {
+    "message": "and save to test HMR",
+    "description": "Edit instruction end"
+  },
+  "countIs": {
+    "message": "count is",
+    "description": "Button text showing count"
+  }
+}

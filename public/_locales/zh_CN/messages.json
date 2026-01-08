@@ -1,0 +1,30 @@
+{
+  "extensionName": {
+    "message": "白泽浏览器助理",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "基于 WXT 和 React 构建的 AI 浏览器助理。",
+    "description": "Description of the extension"
+  },
+  "cardTitle": {
+    "message": "WXT + React",
+    "description": "Title in the popup card"
+  },
+  "readTheDocs": {
+    "message": "点击 WXT 和 React 图标了解更多",
+    "description": "Text directing users to documentation"
+  },
+  "editPrompt": {
+    "message": "编辑",
+    "description": "Edit instruction start"
+  },
+  "andSavePrompt": {
+    "message": "并在保存后测试 HMR",
+    "description": "Edit instruction end"
+  },
+  "countIs": {
+    "message": "计数为",
+    "description": "Button text showing count"
+  }
+}

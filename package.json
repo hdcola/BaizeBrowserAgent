@@ -19,7 +19,7 @@
     "zip:safari": "wxt zip -b safari",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare",
-    "test": "vitest",
+    "test": "vitest run",
     "test:e2e": "playwright test"
   },
   "dependencies": {

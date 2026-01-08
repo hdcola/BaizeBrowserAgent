@@ -13,6 +13,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./"),
+      "wxt/storage": path.resolve(
+        __dirname,
+        "./tests/unit/mocks/wxt-storage.ts"
+      ),
+      "wxt/browser": path.resolve(
+        __dirname,
+        "./tests/unit/mocks/wxt-browser.ts"
+      ),
     },
   },
 });

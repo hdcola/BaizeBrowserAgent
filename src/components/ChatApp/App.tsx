@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Chat } from "./Chat";
 import { Settings } from "./Settings";
-import { initSettings } from "../utils/storage";
-import { useTranslation } from "../utils/i18n";
+import { initSettings } from "../../utils/storage";
+import { useTranslation } from "../../utils/i18n";
 import { Settings as SettingsIcon } from "lucide-react";
 import "./Sidepanel.css";
 

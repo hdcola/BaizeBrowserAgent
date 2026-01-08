@@ -1,5 +1,6 @@
 // @ts-ignore
 import { GoogleGenAI, Type } from "@google/genai";
+import { browser } from "wxt/browser";
 import { getSettings } from "../utils/storage";
 
 export type StreamUpdate =
@@ -38,7 +39,7 @@ const toolsDef = [
 ];
 
 async function executeTool(name: string, args: any): Promise<any> {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
   const activeTab = tabs[0];
 
   if (!activeTab?.id) {
@@ -46,7 +47,7 @@ async function executeTool(name: string, args: any): Promise<any> {
   }
 
   const sendMessage = async () => {
-    return await chrome.tabs.sendMessage(activeTab.id!, {
+    return await browser.tabs.sendMessage(activeTab.id!, {
       action: name,
       ...args,
     });

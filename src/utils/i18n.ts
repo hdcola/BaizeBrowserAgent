@@ -1,3 +1,4 @@
+import { browser } from "wxt/browser";
 import { useState, useEffect } from "react";
 import { getSettings } from "./storage";
 
@@ -48,15 +49,13 @@ export const useTranslation = () => {
   useEffect(() => {
     getSettings().then((s) => setLang(s.language));
 
-    const listener = (changes: {
-      [key: string]: chrome.storage.StorageChange;
-    }) => {
+    const listener = (changes: any) => {
       if (changes.language) {
         setLang(changes.language.newValue as Language);
       }
     };
-    chrome.storage.onChanged.addListener(listener);
-    return () => chrome.storage.onChanged.removeListener(listener);
+    browser.storage.onChanged.addListener(listener);
+    return () => browser.storage.onChanged.removeListener(listener);
   }, []);
 
   const t = (key: keyof (typeof translations)["en"]) => {

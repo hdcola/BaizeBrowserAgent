@@ -3,9 +3,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { sendMessage, clearHistory } from "../services/gemini";
-import type { StreamUpdate } from "../services/gemini";
-import { useTranslation } from "../utils/i18n";
+import { sendMessage, clearHistory } from "../../services/gemini";
+import type { StreamUpdate } from "../../services/gemini";
+import { useTranslation } from "../../utils/i18n";
 import "./Sidepanel.css";
 import { Send, ExternalLink, MousePointerClick, Trash2 } from "lucide-react";
 

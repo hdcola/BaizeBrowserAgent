@@ -1,3 +1,5 @@
+import { browser } from "wxt/browser";
+
 export interface Settings {
   geminiBaseUrl: string;
   geminiApiKey: string;
@@ -13,20 +15,20 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const getSettings = async (): Promise<Settings> => {
-  const result = await chrome.storage.local.get(Object.keys(DEFAULT_SETTINGS));
+  const result = await browser.storage.local.get(Object.keys(DEFAULT_SETTINGS));
   return { ...DEFAULT_SETTINGS, ...result };
 };
 
 export const saveSettings = async (
   settings: Partial<Settings>
 ): Promise<void> => {
-  await chrome.storage.local.set(settings);
+  await browser.storage.local.set(settings);
 };
 
 export const initSettings = async (): Promise<Settings> => {
   const current = await getSettings();
   if (!current.language) {
-    const uiLang = chrome.i18n.getUILanguage();
+    const uiLang = browser.i18n.getUILanguage();
     current.language = uiLang.startsWith("zh") ? "zh" : "en";
     await saveSettings({ language: current.language });
   }

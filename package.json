@@ -4,8 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "dev:safari": "wxt -b safari",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "build:safari": "wxt build -b safari",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "zip:safari": "wxt zip -b safari",
+    "compile": "tsc --noEmit",
+    "postinstall": "wxt prepare",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -20,7 +29,6 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "2.0.0-beta.33",
     "@eslint/js": "^9.39.1",
     "@types/chrome": "^0.1.32",
     "@types/node": "^24.10.1",
@@ -35,6 +43,7 @@
     "sass": "^1.97.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "wxt": "^0.20.13"
   }
 }

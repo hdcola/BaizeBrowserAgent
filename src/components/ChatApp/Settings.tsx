@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import type { Settings as SettingsType } from "../utils/storage";
-import { getSettings, saveSettings } from "../utils/storage";
-import { useTranslation } from "../utils/i18n";
+import type { Settings as SettingsType } from "../../utils/storage";
+import { getSettings, saveSettings } from "../../utils/storage";
+import { useTranslation } from "../../utils/i18n";
 import "./Sidepanel.css";
 import { Save } from "lucide-react";
 

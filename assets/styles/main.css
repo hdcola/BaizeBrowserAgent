@@ -1,0 +1,33 @@
+:root {
+  /* Premium Color Palette (System/Inter based) */
+  --color-bg-glass: rgba(255, 255, 255, 0.75);
+  --color-bg-glass-dark: rgba(20, 20, 20, 0.75);
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #666666;
+  --color-primary: #007bff; /* Example Blue */
+
+  /* Isolation Variables */
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --backdrop-blur: blur(12px);
+}
+
+/* Glassmorphism Utility */
+.glass-panel {
+  background: var(--color-bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #a3a3a3;
+  }
+  .glass-panel {
+    background: var(--color-bg-glass-dark);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}

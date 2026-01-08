@@ -1,8 +1,8 @@
 {
-  "name": "wxt-react-starter",
-  "description": "manifest.json description",
+  "name": "baize-browser-agent",
+  "description": "AI-powered browser agent using WXT, React, and assistant-ui.",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -18,17 +18,28 @@
     "zip:firefox": "wxt zip -b firefox",
     "zip:safari": "wxt zip -b safari",
     "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "test": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@assistant-ui/react": "latest",
+    "@assistant-ui/react-markdown": "latest",
+    "@google/genai": "^1.35.0",
+    "openai": "^6.15.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
+    "@playwright/test": "latest",
+    "@testing-library/react": "latest",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
     "@wxt-dev/module-react": "^1.1.5",
+    "jsdom": "latest",
     "typescript": "^5.9.3",
+    "vitest": "latest",
     "wxt": "^0.20.6"
   }
 }

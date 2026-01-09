@@ -1,0 +1,26 @@
+[
+  {
+    "id": "openai",
+    "name": "OpenAI",
+    "provider": "openai",
+    "defaultBaseUrl": "https://api.openai.com/v1",
+    "defaultModel": "gpt-4o",
+    "requiresApiKey": true
+  },
+  {
+    "id": "gemini",
+    "name": "Google Gemini",
+    "provider": "gemini",
+    "defaultBaseUrl": "https://generativelanguage.googleapis.com",
+    "defaultModel": "gemini-3-flash",
+    "requiresApiKey": true
+  },
+  {
+    "id": "ollama",
+    "name": "Ollama (Local)",
+    "provider": "openai",
+    "defaultBaseUrl": "http://localhost:11434/v1",
+    "defaultModel": "llama3",
+    "requiresApiKey": false
+  }
+]

@@ -30,19 +30,29 @@
 
 ## 3. 用户设置 (User Settings)
 
-### 3.1 AI 模型配置
+### 3.1 AI 模型配置 (Model Configuration)
 
-- **多模型支持**：
-  - **云端厂商**：支持 Gemini, OpenAI (及兼容接口), Claude。
-  - **本地模型**：支持接入 Ollama, LM Studio 等本地运行的模型服务。
-- **配置管理**：
-  - **配置文件驱动**：模型提供商的预设配置（如 endpoint 模板、必要参数）应存储在可扩展的 JSON 配置文件中，方便随时新增提供商。
-  - **通用参数**：仅仅是 SDK 封装或 Base URL/API Key 的组合不同，核心逻辑统一。
-- **参数配置**：
-  - `Provider`: 选择提供商 (e.g., Gemini, OpenAI, Ollama)。
-  - `API Key`: 用户的认证密钥 (本地模型可能为空)。
-  - `Base URL`: 服务地址 (e.g., `http://localhost:11434/v1` for Ollama)。
-  - `Model Name`: 指定模型名称 (e.g., `llama3`)。
+用户可以通过统一的设置面板管理接入的 AI 模型。配置界面应简洁直观，并支持详细的自定义。
+
+- **配置管理逻辑 (Configuration Logic)**：
+
+  - **预设驱动 (Preset Driven)**：模型配置基于预设模板（Presets），预设列表存储在 `config/model_presets.json` 中，方便扩展。
+  - **动态缺省值**：选择预设后，自动填充通用的缺省参数（Base URL, Model Name 等）。
+  - **映射关系**：
+    - 选择 **OpenAI** -> Provider: `openai`, Default SDK/Protocol: OpenAI Standard.
+    - 选择 **Gemini** -> Provider: `gemini`, Default SDK/Protocol: Google GenAI.
+    - 选择 **Ollama** -> Provider: `openai`, Default SDK/Protocol: OpenAI Compatible (Base URL: `http://localhost:11434/v1`).
+
+- **设置面板 UI (Settings UI)**：
+  - **列表管理**：展示已配置的模型卡片，支持新增、编辑和删除。
+  - **添加/编辑模型表单**：
+    - **预设选择 (Provider Preset)**：下拉框选择（OpenAI / Gemini / Ollama / ...）。
+    - **参数配置**：
+      - `Model Name` (e.g., `gpt-4o`, `llama3`) - 根据预设提供默认值。
+      - `API Key` (认证密钥) - 本地模型可选。
+      - `Base URL` (API 端点) - 根据预设自动填充，支持修改。
+      - `Provider` (协议) - 根据预设自动选定 (e.g. Ollama 也是 `openai` 协议)。
+  - **保存功能 (Save Action)**：表单底部提供明确的 **“保存 (Save)”** 和 **“取消 (Cancel)”** 按钮。仅点击保存时才将更改写入存储。
 
 ### 3.2 偏好设置
 

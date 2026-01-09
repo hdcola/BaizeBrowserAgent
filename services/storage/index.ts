@@ -1,9 +1,8 @@
-import { storage } from "wxt/storage";
 import type { AppSettings, ModelConfig, ChatSession } from "./types";
 import { browser } from "wxt/browser";
 
 const SETTINGS_KEY = "local:settings";
-const MODELS_KEY = "local:models";
+// MODELS_KEY removed
 const SESSIONS_KEY = "local:sessions";
 
 // Default Settings
@@ -19,36 +18,21 @@ const getDefaultLanguage = (): "zh_CN" | "en" => {
   return "en";
 };
 
+const PROVIDER_CONFIG_KEY = "local:provider_config";
+
 export const defaultSettings: AppSettings = {
   language: getDefaultLanguage(),
   theme: "system",
-  activeModelId: undefined,
 };
 
-export const defaultModels: ModelConfig[] = [
-  {
-    id: "default-openai",
-    name: "OpenAI GPT-4o",
-    provider: "openai",
-    modelName: "gpt-4o",
-    apiKey: "", // User must fill
-  },
-  {
-    id: "default-gemini",
-    name: "Gemini 1.5 Flash",
-    provider: "gemini",
-    modelName: "gemini-1.5-flash",
-    apiKey: "", // User must fill
-  },
-  {
-    id: "default-ollama",
-    name: "Local Ollama (Llama3)",
-    provider: "openai", // Uses OpenAI protocol
-    modelName: "llama3",
-    baseUrl: "http://localhost:11434/v1",
-    apiKey: "ollama",
-  },
-];
+export const defaultProviderConfig: ModelConfig = {
+  id: "default-openai",
+  name: "OpenAI GPT-4o",
+  provider: "openai",
+  modelName: "gpt-4o",
+  apiKey: "", // User must fill
+  baseUrl: "https://api.openai.com/v1",
+};
 
 export class StorageService {
   // --- Settings ---
@@ -62,42 +46,14 @@ export class StorageService {
     await storage.setItem(SETTINGS_KEY, { ...current, ...partial });
   }
 
-  // --- Models ---
-  static async getModels(): Promise<ModelConfig[]> {
-    const models = await storage.getItem<ModelConfig[]>(MODELS_KEY);
-    return models || defaultModels;
+  // --- Provider Config ---
+  static async getProviderConfig(): Promise<ModelConfig> {
+    const config = await storage.getItem<ModelConfig>(PROVIDER_CONFIG_KEY);
+    return config || defaultProviderConfig;
   }
 
-  static async getModel(id: string): Promise<ModelConfig | undefined> {
-    const models = await this.getModels();
-    return models.find((m) => m.id === id);
-  }
-
-  static async saveModel(config: ModelConfig): Promise<void> {
-    const models = await this.getModels();
-    const index = models.findIndex((m) => m.id === config.id);
-    if (index >= 0) {
-      models[index] = config;
-    } else {
-      models.push(config);
-    }
-    await storage.setItem(MODELS_KEY, models);
-  }
-
-  static async deleteModel(id: string): Promise<void> {
-    const models = await this.getModels();
-    const newModels = models.filter((m) => m.id !== id);
-    await storage.setItem(MODELS_KEY, newModels);
-  }
-
-  static async getActiveModelConfig(): Promise<ModelConfig | undefined> {
-    const settings = await this.getSettings();
-    if (!settings.activeModelId) {
-      // If no active model, return the first one as default or undefined
-      const models = await this.getModels();
-      return models[0];
-    }
-    return this.getModel(settings.activeModelId);
+  static async saveProviderConfig(config: ModelConfig): Promise<void> {
+    await storage.setItem(PROVIDER_CONFIG_KEY, config);
   }
 
   // --- Sessions ---

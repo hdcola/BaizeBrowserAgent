@@ -1,0 +1,23 @@
+/* Override assistant-ui vars to match our theme */
+:root {
+  --aui-font-family: Inter, system-ui, sans-serif;
+  --aui-radius: 0.5rem;
+
+  /* Light Mode */
+  --aui-background: transparent;
+  --aui-foreground: var(--color-text-primary);
+  --aui-muted: #f3f4f6;
+  --aui-muted-foreground: var(--color-text-secondary);
+}
+
+.aui-thread {
+  height: 100%;
+}
+
+.aui-thread-list {
+  padding-bottom: 2rem;
+}
+
+[data-theme="dark"] {
+  --aui-muted: #1f2937;
+}

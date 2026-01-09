@@ -3,8 +3,8 @@ import type { LLMConfig, Message } from "../llm/types";
 export interface AppSettings {
   language: "zh_CN" | "en";
   theme: "light" | "dark" | "system";
-  activeModelId?: string;
-  quickPrompts?: string[]; // Defined in PRD but missed in first pass, adding for completeness
+  // activeModelId removed - we now store a single provider config
+  quickPrompts?: string[];
 }
 
 export interface ModelConfig extends LLMConfig {

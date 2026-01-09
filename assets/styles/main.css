@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   /* Premium Color Palette (System/Inter based) */
   --color-bg-glass: rgba(255, 255, 255, 0.75);

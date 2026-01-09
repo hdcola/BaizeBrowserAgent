@@ -26,13 +26,12 @@ test("chat flow", async ({ page, extensionId }) => {
     await page.waitForTimeout(2000);
   }
 
-  await expect(page.getByText("Start a conversation...")).toBeVisible({
+  await expect(page.getByText("How can I help you today?")).toBeVisible({
     timeout: 10000,
   });
 
   // 3. Go to Settings (Gear icon)
-  // Our ChatInterface uses a button with "⚙️".
-  await page.click('button:has-text("⚙️")');
+  await page.getByTitle("Settings").click();
   await expect(page.getByText("Settings")).toBeVisible();
 
   // 4. Check Language Switch
@@ -42,5 +41,5 @@ test("chat flow", async ({ page, extensionId }) => {
   await page.click("text=Cancel");
 
   // 6. Verify Back in Chat
-  await expect(page.getByText("Start a conversation...")).toBeVisible();
+  await expect(page.getByText("How can I help you today?")).toBeVisible();
 });

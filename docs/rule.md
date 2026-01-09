@@ -6,7 +6,7 @@
 
 - **Core Framework**: [WXT](https://wxt.dev) (Web Extension Tools)
 - **UI Framework**: React 19 + TypeScript
-- **Styling**: Vanilla CSS (Premium, Glassmorphism, Dynamic) - _No Tailwind_
+- **Styling**: Tailwind CSS
 - **State/AI UI**: [assistant-ui](https://github.com/assistant-ui/assistant-ui) for chat interface
 - **Package Manager**: pnpm
 

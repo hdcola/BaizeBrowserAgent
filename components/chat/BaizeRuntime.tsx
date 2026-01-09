@@ -56,9 +56,10 @@ export function useBaizeRuntime() {
             if (abortSignal.aborted) return;
 
             if (chunk.content) {
+              // console.log("Yielding text chunk:", chunk.content);
               textBuffer += chunk.content;
               yield {
-                content: [{ type: "text", text: chunk.content }],
+                content: [{ type: "text", text: textBuffer }],
               };
             }
 

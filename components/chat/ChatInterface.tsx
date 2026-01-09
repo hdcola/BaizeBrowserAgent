@@ -6,6 +6,40 @@ import { useTranslation, t as staticT } from "@/utils/i18n";
 import "@/assets/styles/assistant-ui-overrides.css";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error("ChatInterface Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 text-red-500 bg-red-50 dark:bg-red-900/10 rounded overflow-auto">
+          <h2 className="font-bold">Something went wrong.</h2>
+          <pre className="text-xs mt-2">{this.state.error?.message}</pre>
+          <pre className="text-xs mt-1 opacity-70">
+            {this.state.error?.stack}
+          </pre>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export function ChatInterface({
   onOpenSettings,
 }: {
@@ -49,9 +83,11 @@ export function ChatInterface({
       </header>
 
       <div className="flex-1 overflow-hidden relative">
-        <AssistantRuntimeProvider runtime={runtime}>
-          <Thread />
-        </AssistantRuntimeProvider>
+        <ErrorBoundary>
+          <AssistantRuntimeProvider runtime={runtime}>
+            <Thread />
+          </AssistantRuntimeProvider>
+        </ErrorBoundary>
       </div>
     </div>
   );

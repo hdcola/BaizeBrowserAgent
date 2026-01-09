@@ -2,6 +2,7 @@ import {
   ThreadPrimitive,
   ComposerPrimitive,
   MessagePrimitive,
+  useMessage,
 } from "@assistant-ui/react";
 import React from "react";
 
@@ -21,25 +22,29 @@ export const Thread = (props: any) => {
 
         <ThreadPrimitive.Messages
           components={{
-            Message: ({ message }: any) => (
-              <MessagePrimitive.Root className="group relative mb-4">
-                <div
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
+            Message: () => {
+              const message = useMessage();
+              if (!message) return null;
+              return (
+                <MessagePrimitive.Root className="group relative mb-4">
                   <div
-                    className={`max-w-[85%] p-3 rounded-2xl shadow-sm leading-relaxed text-sm ${
-                      message.role === "user"
-                        ? "bg-blue-600 text-white rounded-br-sm"
-                        : "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm"
+                    className={`flex ${
+                      message.role === "user" ? "justify-end" : "justify-start"
                     }`}
                   >
-                    <MessagePrimitive.Content />
+                    <div
+                      className={`max-w-[85%] p-3 rounded-2xl shadow-sm leading-relaxed text-sm ${
+                        message.role === "user"
+                          ? "bg-blue-600 text-white rounded-br-sm"
+                          : "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm"
+                      }`}
+                    >
+                      <MessagePrimitive.Content />
+                    </div>
                   </div>
-                </div>
-              </MessagePrimitive.Root>
-            ),
+                </MessagePrimitive.Root>
+              );
+            },
           }}
         />
       </ThreadPrimitive.Viewport>

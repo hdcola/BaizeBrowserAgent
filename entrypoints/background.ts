@@ -1,6 +1,4 @@
 export default defineBackground(() => {
-  console.log("Hello background!", { id: browser.runtime.id });
-
   // Chrome/Edge: Open side panel on action click
   // @ts-ignore: setPanelBehavior might be missing in some type definitions
   if (browser.sidePanel?.setPanelBehavior) {

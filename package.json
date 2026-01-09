@@ -17,7 +17,7 @@
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "tsx scripts/copy-locales.ts && wxt zip --browser firefox",
     "zip:safari": "wxt zip -b safari",
-    "compile": "tsc --noEmit",
+    "check": "tsc --noEmit",
     "postinstall": "wxt prepare",
     "test": "vitest run",
     "test:e2e": "playwright test",

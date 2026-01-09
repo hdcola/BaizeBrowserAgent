@@ -106,7 +106,7 @@ trigger: always_on
 
 ## 6. Workflow
 
-- **Lint**: Run `eslint` before commit.
+- **Check**: Run `pnpm check` before commit.
 - **Build**: `pnpm build` should generate valid Manifest V3 output.
 
 ## 7. Testing Strategy

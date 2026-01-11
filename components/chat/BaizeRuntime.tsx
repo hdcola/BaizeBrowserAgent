@@ -36,7 +36,9 @@ export function useBaizeRuntime() {
       // 2. Stream from LLMService (Agent Loop)
       let currentMessages = [...history];
       let keepGenerating = true;
-      let maxSteps = 5;
+      let maxSteps = 10; // Increased to allow more tool iterations
+      let lastIterationHadTools = false;
+      const allToolCallsForUI: any[] = []; // MOVED OUTSIDE: Persist ALL tool calls across loop iterations
 
       while (keepGenerating && maxSteps > 0) {
         maxSteps--;
@@ -44,6 +46,10 @@ export function useBaizeRuntime() {
 
         try {
           const tools = BrowserTools;
+          console.log(
+            "[BaizeRuntime] Starting new stream iteration. Messages:",
+            currentMessages.length
+          );
           const stream = llmService.stream({
             messages: currentMessages,
             tools,
@@ -59,7 +65,10 @@ export function useBaizeRuntime() {
               // console.log("Yielding text chunk:", chunk.content);
               textBuffer += chunk.content;
               yield {
-                content: [{ type: "text", text: textBuffer }],
+                content: [
+                  ...allToolCallsForUI, // Include all previous tool calls
+                  { type: "text", text: textBuffer },
+                ],
               };
             }
 
@@ -71,6 +80,33 @@ export function useBaizeRuntime() {
                 if (tc.name) toolCallsMap[tc.id].name = tc.name;
                 if (tc.args) toolCallsMap[tc.id].args += tc.args;
               });
+
+              // Yield tool calls to the UI as they arrive
+              // CRITICAL: We must include ALL previous tool calls in the array
+              if (chunk.toolCalls.length > 0) {
+                console.log(
+                  "[BaizeRuntime] Yielding tool calls to UI:",
+                  chunk.toolCalls.map((t) => t.name)
+                );
+
+                // Add new tool calls to the accumulated array
+                chunk.toolCalls.forEach((tc) => {
+                  allToolCallsForUI.push({
+                    type: "tool-call",
+                    toolName: tc.name,
+                    toolCallId: tc.id,
+                    args: tc.args,
+                  } as any);
+                });
+              }
+
+              // Yield the COMPLETE array (all tool calls so far + text)
+              yield {
+                content: [
+                  ...allToolCallsForUI,
+                  { type: "text", text: textBuffer },
+                ],
+              };
             }
           }
 
@@ -84,14 +120,35 @@ export function useBaizeRuntime() {
             });
 
             for (const tc of toolCalls) {
-              // Indicate tool execution in UI
-              yield {
-                content: [
-                  { type: "text", text: `\n\n_Running ${tc.name}..._\n\n` },
-                ],
-              };
+              console.log(
+                `[BaizeRuntime] Executing tool: ${tc.name} with args:`,
+                tc.args
+              );
+              // Execute the tool
+              // Note: We don't yield text here anymore as the user wants a dedicated UI
+              // which should be handled by the UI component rendering the 'tool-call' part of the message.
+              // However, useLocalRuntime expects us to yield something?
+              // Actually, we yielded the tool call part in the previous loop? NO.
+              // We need to yield the TOOL CALL itself if we want the UI to show it?
+              // The `chunk.toolCalls` handling above accumulates them but doesn't necessarily yield them to runtime?
 
+              // Let's first remove the text bubble.
               const result = await ToolsService.executeTool(tc);
+              console.log(
+                `[BaizeRuntime] Tool Result for ${tc.name}:`,
+                result.slice(0, 200) + (result.length > 200 ? "..." : "")
+              );
+
+              // Yield the result as a text block so it appears in the chat UI
+              // This ensures that even if we are in a loop, the user sees the progress.
+              // Note: This appends text to the assistant message content.
+              const resultLog = `\n\n> **Tool Result (${tc.name})**:\n> ${result
+                .slice(0, 300)
+                .replace(/\n/g, " ")}${result.length > 300 ? "..." : ""}\n\n`;
+              textBuffer += resultLog;
+              yield {
+                content: [{ type: "text", text: resultLog }],
+              };
 
               // Check for critical connection errors
               if (result.includes("Receiving end does not exist")) {
@@ -113,12 +170,46 @@ export function useBaizeRuntime() {
               });
             }
             keepGenerating = true;
+            lastIterationHadTools = true;
+          } else {
+            lastIterationHadTools = false;
           }
         } catch (e: any) {
           yield {
             content: [{ type: "text", text: `Error: ${e.message}` }],
           };
           return;
+        }
+      }
+
+      // CRITICAL: If the loop ended because of maxSteps but we just executed tools,
+      // we need ONE MORE call to get the final text response from the LLM.
+      if (lastIterationHadTools && maxSteps <= 0) {
+        console.log(
+          "[BaizeRuntime] Loop ended with tools executed. Making final call for text response..."
+        );
+        try {
+          const stream = llmService.stream({
+            messages: currentMessages,
+            tools: BrowserTools,
+          });
+
+          let finalText = "";
+          for await (const chunk of stream) {
+            if (abortSignal.aborted) return;
+            if (chunk.content) {
+              finalText += chunk.content;
+              yield {
+                content: [{ type: "text", text: finalText }],
+              };
+            }
+          }
+        } catch (e: any) {
+          yield {
+            content: [
+              { type: "text", text: `Error in final response: ${e.message}` },
+            ],
+          };
         }
       }
     },

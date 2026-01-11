@@ -127,6 +127,12 @@ export class GeminiProvider implements LLMProvider {
     const contents = this.mapMessages(request.messages);
     const tools = this.mapTools(request.tools);
 
+    // DEBUG: Inspect history to understand infinite loops
+    console.log(
+      "[GeminiProvider] Full History Sent to API:",
+      JSON.stringify(contents, null, 2)
+    );
+
     const result = await this.ai.models.generateContentStream({
       model: this.modelName,
       contents: contents,
@@ -145,12 +151,13 @@ export class GeminiProvider implements LLMProvider {
       const calls = chunkAny.functionCalls; // SDK helper, might strip metadata
       let text = "";
 
-      // Handle text extraction
-      if (typeof chunkAny.text === "string") {
+      // Handle text extraction safely to avoid SDK warnings
+      // SDK warns if we access .text when it's a function call
+      if (chunk.candidates?.[0]?.content?.parts?.[0]?.text) {
+        text = chunk.candidates[0].content.parts[0].text;
+      } else if (typeof chunkAny.text === "string") {
+        // Fallback
         text = chunkAny.text;
-      } else if (typeof chunkAny.text === "function") {
-        const t = chunkAny.text();
-        if (t) text = t;
       }
 
       // Collect tool calls

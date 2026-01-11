@@ -27,7 +27,7 @@
     "@assistant-ui/react": "latest",
     "@assistant-ui/react-markdown": "latest",
     "@google/genai": "^1.35.0",
-    "openai": "^6.15.0",
+    "openai": "^6.16.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "turndown": "^7.2.2"
@@ -37,7 +37,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "@testing-library/react": "latest",
     "@types/fs-extra": "^11.0.4",
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "@types/turndown": "^5.0.6",
     "@vitejs/plugin-react": "^5.1.2",
@@ -50,6 +50,6 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "latest",
-    "wxt": "^0.20.6"
+    "wxt": "^0.20.13"
   }
 }

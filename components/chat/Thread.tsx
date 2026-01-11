@@ -5,6 +5,7 @@ import {
   useMessage,
 } from "@assistant-ui/react";
 import React from "react";
+import { ToolUI } from "./ToolUI";
 
 export const Thread = (props: any) => {
   return (
@@ -25,6 +26,12 @@ export const Thread = (props: any) => {
             Message: () => {
               const message = useMessage();
               if (!message) return null;
+
+              // Special handling for tool outputs which are separate messages in assistant-ui (or mapped as such)
+              if (message.role === "tool") {
+                return <ToolUI />;
+              }
+
               return (
                 <MessagePrimitive.Root className="group relative mb-4">
                   <div
@@ -33,13 +40,23 @@ export const Thread = (props: any) => {
                     }`}
                   >
                     <div
-                      className={`max-w-[85%] p-3 rounded-2xl shadow-sm leading-relaxed text-sm ${
+                      className={`max-w-[85%] rounded-2xl shadow-sm leading-relaxed text-sm overflow-hidden ${
                         message.role === "user"
-                          ? "bg-blue-600 text-white rounded-br-sm"
+                          ? "bg-blue-600 text-white rounded-br-sm p-3"
                           : "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm"
                       }`}
                     >
-                      <MessagePrimitive.Content />
+                      {/* For assistant messages, we render text content AND tool calls if any */}
+                      <div className={message.role !== "user" ? "p-3" : ""}>
+                        <MessagePrimitive.Content />
+                      </div>
+
+                      {/* Render Tool Calls attached to assistant message */}
+                      {message.role === "assistant" && (
+                        <div className="px-3 pb-3">
+                          <ToolUI />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </MessagePrimitive.Root>

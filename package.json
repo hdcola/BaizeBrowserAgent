@@ -27,6 +27,7 @@
     "@assistant-ui/react": "latest",
     "@assistant-ui/react-markdown": "latest",
     "@google/genai": "^1.35.0",
+    "lucide-react": "^0.562.0",
     "openai": "^6.16.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",

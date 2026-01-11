@@ -139,15 +139,20 @@ export function useBaizeRuntime() {
                 result.slice(0, 200) + (result.length > 200 ? "..." : "")
               );
 
-              // Yield the result as a text block so it appears in the chat UI
-              // This ensures that even if we are in a loop, the user sees the progress.
-              // Note: This appends text to the assistant message content.
-              const resultLog = `\n\n> **Tool Result (${tc.name})**:\n> ${result
-                .slice(0, 300)
-                .replace(/\n/g, " ")}${result.length > 300 ? "..." : ""}\n\n`;
-              textBuffer += resultLog;
+              // Update the UI state with the result
+              // Find the existing tool call in the array and attach the result
+              const existingToolIndex = allToolCallsForUI.findIndex(
+                (t) => t.toolCallId === tc.id
+              );
+              if (existingToolIndex !== -1) {
+                allToolCallsForUI[existingToolIndex] = {
+                  ...allToolCallsForUI[existingToolIndex],
+                  result: result, // Attach the full result here
+                };
+              }
 
-              // CRITICAL: Yield the updated content with tools FIRST, then text
+              // Yield the updated content with tools (now containing results) FIRST, then text
+              // Note: We DO NOT append the result to textBuffer anymore, as ToolUI will display it.
               yield {
                 content: [
                   ...allToolCallsForUI,

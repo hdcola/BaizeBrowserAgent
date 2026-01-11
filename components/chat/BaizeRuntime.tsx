@@ -93,10 +93,23 @@ export function useBaizeRuntime() {
 
               const result = await ToolsService.executeTool(tc);
 
+              // Check for critical connection errors
+              if (result.includes("Receiving end does not exist")) {
+                yield {
+                  content: [
+                    {
+                      type: "text",
+                      text: "\n\n> [!WARNING]\n> **Connection Lost**: The extension is disconnected from the page. Please **REFRESH** the page to allow the extension to inject, then try again.",
+                    },
+                  ],
+                };
+              }
+
               currentMessages.push({
                 role: "tool",
                 content: result,
                 toolCallId: tc.id,
+                name: tc.name, // Required for Gemini functionResponse
               });
             }
             keepGenerating = true;

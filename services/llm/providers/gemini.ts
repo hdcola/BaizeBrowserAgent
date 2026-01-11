@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import type {
   LLMConfig,
   LLMProvider,
@@ -16,7 +16,10 @@ export class GeminiProvider implements LLMProvider {
     if (!config.apiKey) {
       throw new Error("API Key is required for Gemini Provider");
     }
-    this.ai = new GoogleGenAI({ apiKey: config.apiKey });
+    this.ai = new GoogleGenAI({
+      apiKey: config.apiKey,
+      httpOptions: config.baseUrl ? { baseUrl: config.baseUrl } : undefined,
+    });
     this.modelName = config.modelName;
   }
 
@@ -24,8 +27,6 @@ export class GeminiProvider implements LLMProvider {
     role: string;
     parts: { text?: string; functionCall?: any; functionResponse?: any }[];
   }[] {
-    const systemMessage = messages.find((m) => m.role === "system");
-    // System message is handled via config, so filter it out here
     return messages
       .filter((m) => m.role !== "system")
       .map((m) => {
@@ -38,21 +39,24 @@ export class GeminiProvider implements LLMProvider {
 
         if (m.toolCalls) {
           m.toolCalls.forEach((tc) => {
+            const { id, name, args, ...rest } = tc as any;
+            // The API expects thought_signature and other metadata to be on the Part object.
+            // We spread ...rest (containing thought_signature) onto the Part object itself.
             parts.push({
               functionCall: {
-                name: tc.name, // Gemini expects 'name', 'args'
-                args: tc.args,
+                name: name,
+                args: typeof args === "string" ? JSON.parse(args) : args,
               },
+              ...rest,
             });
           });
         }
 
         if (m.role === "tool") {
-          // Tool response
           parts.push({
             functionResponse: {
               name: m.name,
-              response: { content: m.content }, // content is usually the result string/json
+              response: { content: m.content },
             },
           });
         }
@@ -63,15 +67,17 @@ export class GeminiProvider implements LLMProvider {
 
   private mapTools(tools?: any[]): any[] | undefined {
     if (!tools || tools.length === 0) return undefined;
-    return tools.map((t) => ({
-      functionDeclarations: [
-        {
+
+    // Format tools to match the expected structure
+    return [
+      {
+        functionDeclarations: tools.map((t) => ({
           name: t.name,
           description: t.description,
-          parameters: t.parameters, // JSON Schema
-        },
-      ],
-    }));
+          parameters: t.parameters || { type: Type.OBJECT, properties: {} },
+        })),
+      },
+    ];
   }
 
   async chat(request: LLMRequest): Promise<LLMResponse> {
@@ -90,17 +96,25 @@ export class GeminiProvider implements LLMProvider {
       },
     });
 
-    // Handle tool calls in response
+    // Handle candidates safely
     const candidates = response.candidates?.[0];
     const part = candidates?.content?.parts?.[0];
     const text = part?.text;
+
+    // Parse function calls from response
+    // For non-streaming, we also need to capture part metadata, but user issue was streaming.
+    // We'll apply similar logic here for consistency.
     const functionCalls = candidates?.content?.parts
       ?.filter((p: any) => p.functionCall)
-      ?.map((p: any) => ({
-        id: "call_" + Math.random().toString(36).substr(2, 9), // Gemini v1 doesn't have call IDs same way as OpenAI
-        name: p.functionCall.name,
-        args: p.functionCall.args,
-      }));
+      ?.map((p: any) => {
+        const { functionCall, ...partRest } = p;
+        return {
+          id: "call_" + Math.random().toString(36).substr(2, 9),
+          name: functionCall.name,
+          args: functionCall.args,
+          ...partRest,
+        };
+      });
 
     return {
       content: text || "",
@@ -125,21 +139,74 @@ export class GeminiProvider implements LLMProvider {
     });
 
     for await (const chunk of result) {
-      const text = chunk.text;
-      const candidates = chunk.candidates?.[0]; // Restore candidates
+      // Use the logic from the user's snippet to handle text/functionCalls
+      // Safely access properties as per user recommendation
+      const chunkAny = chunk as any;
+      const calls = chunkAny.functionCalls; // SDK helper, might strip metadata
+      let text = "";
 
-      // Gemini streaming tool calls:
-      const functionCalls = candidates?.content?.parts
-        ?.filter((p: any) => p.functionCall)
-        ?.map((p: any) => ({
-          id: "call_" + Math.random().toString(36).substr(2, 9),
-          name: p.functionCall.name,
-          args: p.functionCall.args,
-        }));
+      // Handle text extraction
+      if (typeof chunkAny.text === "string") {
+        text = chunkAny.text;
+      } else if (typeof chunkAny.text === "function") {
+        const t = chunkAny.text();
+        if (t) text = t;
+      }
+
+      // Collect tool calls
+      let functionCalls: any[] = [];
+
+      // If calls were found only in SDK helper, we try to use it but we might miss metadata.
+      // Ideally we SHOULD LOOK AT PARTS directly.
+
+      if (chunk.candidates?.[0]?.content?.parts) {
+        const parts = chunk.candidates[0].content.parts;
+        const callsFromParts = parts
+          .filter((p: any) => p.functionCall)
+          .map((p: any) => {
+            const { name, args } = p.functionCall;
+            // Capture everything else from the PART (like thought_signature)
+            // We exclude functionCall itself to avoid nesting
+            const { functionCall, ...partRest } = p;
+
+            return {
+              id: "call_" + Math.random().toString(36).substr(2, 9),
+              name: name,
+              args: typeof args === "object" ? JSON.stringify(args) : args,
+              ...partRest, // Capture thought_signature from Part
+            };
+          });
+
+        if (callsFromParts.length > 0) {
+          functionCalls = callsFromParts;
+        } else if (calls && Array.isArray(calls)) {
+          // Fallback to helper if parts didn't work (unlikely)
+          functionCalls = calls.map((call: any) => {
+            const { name, args, ...rest } = call;
+            return {
+              id: call.id || "call_" + Math.random().toString(36).substr(2, 9),
+              name: name,
+              args: typeof args === "object" ? JSON.stringify(args) : args,
+              ...rest,
+            };
+          });
+        }
+      } else if (calls && Array.isArray(calls)) {
+        // Fallback if no parts structure found
+        functionCalls = calls.map((call: any) => {
+          const { name, args, ...rest } = call;
+          return {
+            id: call.id || "call_" + Math.random().toString(36).substr(2, 9),
+            name: name,
+            args: typeof args === "object" ? JSON.stringify(args) : args,
+            ...rest,
+          };
+        });
+      }
 
       yield {
         content: text || "",
-        toolCalls: functionCalls, // Gemini usually sends complete function calls in stream chunks (at end)
+        toolCalls: functionCalls.length > 0 ? functionCalls : undefined,
         done: false,
       };
     }

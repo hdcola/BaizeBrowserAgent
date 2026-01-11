@@ -6,6 +6,9 @@ export const ToolUI = () => {
 
   if (!message) return null;
 
+  // Use a type guard or cast to access properties safely
+  const msg = message as any;
+
   // Find tool call parts in the message content
   // Note: BaizeRuntime yields "tool-call" type parts.
   // We also want to show tool outputs if they exist in the SAME message?
@@ -15,15 +18,30 @@ export const ToolUI = () => {
   // 1. If role is 'assistant', look for 'tool-call' parts.
   // 2. If role is 'tool', render the content as the result.
 
-  if (message.role === "assistant") {
-    const toolCalls = message.content.filter(
-      (c: any) => c.type === "tool-call"
+  if (msg.role === "tool") {
+    return (
+      <div className="flex flex-col gap-2 mt-2 w-full p-2 bg-gray-50 dark:bg-gray-800/50 rounded border-l-2 border-green-500">
+        <div className="flex items-center gap-2 font-mono text-xs text-gray-500">
+          <span>Running Tool...</span>
+        </div>
+        <pre className="whitespace-pre-wrap break-all text-xs text-gray-600 dark:text-gray-300 font-mono">
+          {/* Tool results usually come as content */}
+          {msg.content}
+        </pre>
+      </div>
     );
+  }
+
+  if (msg.role === "assistant") {
+    // Check if content is an array before filtering
+    if (!Array.isArray(msg.content)) return null;
+
+    const toolCalls = msg.content.filter((c: any) => c.type === "tool-call");
 
     if (toolCalls.length === 0) return null;
 
     return (
-      <div className="flex flex-col gap-3 mt-3 w-full">
+      <div className="flex flex-col gap-3 mb-4 w-full border-b border-gray-100 dark:border-gray-800 pb-4">
         {toolCalls.map((tc: any, idx: number) => (
           <div
             key={tc.toolCallId || idx}
@@ -52,34 +70,6 @@ export const ToolUI = () => {
             )}
           </div>
         ))}
-      </div>
-    );
-  }
-
-  // If role is 'tool', it represents the output of a tool
-  if (message.role === "tool") {
-    // The content of a tool message is the result string
-    // BaizeRuntime puts the result in `content`.
-    // But wait, message.content is an array of parts? or string?
-    // useLocalRuntime maps it.
-
-    // Let's inspect the content.
-    // In BaizeRuntime: currentMessages.push({ role: 'tool', content: result ... })
-
-    return (
-      <div className="mt-2 w-full max-w-[85%] self-start">
-        <div className="bg-green-50/50 dark:bg-green-900/10 border border-green-100 dark:border-green-800/30 rounded-lg p-3 text-xs">
-          <div className="flex items-center gap-2 text-green-700 dark:text-green-400 font-mono mb-1">
-            <span className="font-semibold">✓ Tool Result</span>
-          </div>
-          <pre className="whitespace-pre-wrap break-all text-gray-600 dark:text-gray-400 font-mono max-h-40 overflow-y-auto">
-            {Array.isArray(message.content)
-              ? message.content
-                  .map((c: any) => c.text || JSON.stringify(c))
-                  .join("")
-              : String(message.content)}
-          </pre>
-        </div>
       </div>
     );
   }

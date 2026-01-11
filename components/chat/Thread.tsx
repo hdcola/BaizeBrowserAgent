@@ -46,17 +46,17 @@ export const Thread = (props: any) => {
                           : "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm"
                       }`}
                     >
+                      {/* Render Tool Calls attached to assistant message */}
+                      {message.role === "assistant" && (
+                        <div className="px-3 pt-3">
+                          <ToolUI />
+                        </div>
+                      )}
+
                       {/* For assistant messages, we render text content AND tool calls if any */}
                       <div className={message.role !== "user" ? "p-3" : ""}>
                         <MessagePrimitive.Content />
                       </div>
-
-                      {/* Render Tool Calls attached to assistant message */}
-                      {message.role === "assistant" && (
-                        <div className="px-3 pb-3">
-                          <ToolUI />
-                        </div>
-                      )}
                     </div>
                   </div>
                 </MessagePrimitive.Root>

@@ -66,8 +66,8 @@ export function useBaizeRuntime() {
               textBuffer += chunk.content;
               yield {
                 content: [
-                  ...allToolCallsForUI, // Include all previous tool calls
-                  { type: "text", text: textBuffer },
+                  ...allToolCallsForUI, // Keep tools at the top
+                  { type: "text", text: textBuffer }, // Text follows tools
                 ],
               };
             }
@@ -146,8 +146,13 @@ export function useBaizeRuntime() {
                 .slice(0, 300)
                 .replace(/\n/g, " ")}${result.length > 300 ? "..." : ""}\n\n`;
               textBuffer += resultLog;
+
+              // CRITICAL: Yield the updated content with tools FIRST, then text
               yield {
-                content: [{ type: "text", text: resultLog }],
+                content: [
+                  ...allToolCallsForUI,
+                  { type: "text", text: textBuffer },
+                ],
               };
 
               // Check for critical connection errors

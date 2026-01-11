@@ -111,6 +111,26 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           </select>
         </div>
 
+        {/* Max Steps Setting */}
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider text-xs">
+            {t("settings_max_steps_label")}
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={settings.maxSteps || 30}
+            onChange={(e) => {
+              const val = parseInt(e.target.value);
+              if (!isNaN(val)) {
+                actions.updateSettings({ maxSteps: val });
+              }
+            }}
+            className="w-full p-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 border-none focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
         <hr className="border-gray-200 dark:border-gray-800" />
 
         {/* AI Configuration */}

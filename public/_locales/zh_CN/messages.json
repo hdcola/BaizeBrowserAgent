@@ -77,6 +77,10 @@
   },
   "settings_model_name_placeholder": {
     "message": "例如 gpt-4o",
-    "description": "Placeholder for Model Name input"
+    "description": "Model Name 输入框占位符"
+  },
+  "settings_max_steps_label": {
+    "message": "最大工具调用次数",
+    "description": "最大工具调用次数标签"
   }
 }

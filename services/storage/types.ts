@@ -5,6 +5,7 @@ export interface AppSettings {
   theme: "light" | "dark" | "system";
   // activeModelId removed - we now store a single provider config
   quickPrompts?: string[];
+  maxSteps: number;
 }
 
 export interface ModelConfig extends LLMConfig {

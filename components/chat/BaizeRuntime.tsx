@@ -4,7 +4,7 @@ import { Message, ToolCall } from "@/services/llm/types";
 import { BrowserTools, ToolsService } from "@/services/tools";
 
 export function useBaizeRuntime() {
-  const { llmService } = useAgent();
+  const { llmService, settings } = useAgent();
 
   const adapter = {
     run: async function* ({ messages, abortSignal }) {
@@ -36,7 +36,7 @@ export function useBaizeRuntime() {
       // 2. Stream from LLMService (Agent Loop)
       let currentMessages = [...history];
       let keepGenerating = true;
-      let maxSteps = 10; // Increased to allow more tool iterations
+      let maxSteps = settings.maxSteps || 30; // Use user setting or default
       let lastIterationHadTools = false;
       const allToolCallsForUI: any[] = []; // MOVED OUTSIDE: Persist ALL tool calls across loop iterations
 

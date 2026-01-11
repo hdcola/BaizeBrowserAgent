@@ -78,5 +78,9 @@
   "settings_model_name_placeholder": {
     "message": "e.g. gpt-4o",
     "description": "Placeholder for Model Name input"
+  },
+  "settings_max_steps_label": {
+    "message": "Max Tool Steps",
+    "description": "Label for max tool steps input"
   }
 }

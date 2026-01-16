@@ -13,18 +13,18 @@ export const BrowserTools: Tool[] = [
     },
   },
   {
-    name: "scroll_page",
-    description: "Scroll the page up or down to see more content.",
+    name: "click_element",
+    description: "Click an element on the page using a CSS selector.",
     parameters: {
       type: "object",
       properties: {
-        direction: {
+        selector: {
           type: "string",
-          enum: ["up", "down"],
-          description: "The direction to scroll.",
+          description:
+            "The CSS selector of the element to click. Must be a valid standard CSS selector (no :has-text or xpath).",
         },
       },
-      required: ["direction"],
+      required: ["selector"],
     },
   },
 ];
@@ -56,17 +56,23 @@ export class ToolsService {
       }
     }
 
-    if (call.name === "scroll_page") {
+    if (call.name === "click_element") {
       try {
         const args =
           typeof call.args === "string" ? JSON.parse(call.args) : call.args;
-        await browser.tabs.sendMessage(activeTab.id, {
-          type: "SCROLL_PAGE",
-          payload: { direction: args.direction },
+        const res = await browser.tabs.sendMessage(activeTab.id, {
+          type: "CLICK_ELEMENT",
+          payload: { selector: args.selector },
         } as MessagePayload);
-        return "Scrolled page successfully.";
+
+        const response = res as { success: boolean; error?: string };
+        if (response.success) {
+          return "Clicked element successfully.";
+        } else {
+          return `Error clicking element: ${response.error}`;
+        }
       } catch (e: any) {
-        return `Error scrolling page: ${e.message}`;
+        return `Error clicking element: ${e.message}`;
       }
     }
 

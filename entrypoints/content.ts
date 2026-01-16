@@ -35,13 +35,25 @@ export default defineContentScript({
           return true;
         }
 
-        if (message.type === "SCROLL_PAGE") {
-          const { direction } = message.payload || {};
-          const amount = window.innerHeight * 0.8;
-          if (direction === "up")
-            window.scrollBy({ top: -amount, behavior: "smooth" });
-          else window.scrollBy({ top: amount, behavior: "smooth" });
-          sendResponse({ success: true });
+        if (message.type === "CLICK_ELEMENT") {
+          const { selector } = message.payload || {};
+          try {
+            const element = document.querySelector(selector) as HTMLElement;
+            if (element) {
+              element.click();
+              sendResponse({ success: true });
+            } else {
+              sendResponse({
+                success: false,
+                error: `Element not found: ${selector}`,
+              });
+            }
+          } catch (e: any) {
+            sendResponse({
+              success: false,
+              error: `Invalid selector or error: ${e.message}`,
+            });
+          }
           return false;
         }
       }

@@ -33,15 +33,33 @@ export class GeminiProvider implements LLMProvider {
         const role = m.role === "assistant" ? "model" : "user";
         const parts: any[] = [];
 
-        if (m.content) {
+        if (Array.isArray(m.content)) {
+            m.content.forEach((c: any) => {
+                if (c.type === "text") {
+                    parts.push({ text: c.text });
+                } else if (c.type === "image_url") {
+                    // Extract base64 and mimeType from data URL
+                     const url = c.image_url.url;
+                     if (url.startsWith("data:")) {
+                         const match = url.match(/^data:(.*?);base64,(.*)$/);
+                         if (match) {
+                             parts.push({
+                                 inlineData: {
+                                     mimeType: match[1],
+                                     data: match[2]
+                                 }
+                             });
+                         }
+                     }
+                }
+            });
+        } else if (typeof m.content === "string") {
           parts.push({ text: m.content });
         }
 
         if (m.toolCalls) {
           m.toolCalls.forEach((tc) => {
             const { id, name, args, ...rest } = tc as any;
-            // The API expects thought_signature and other metadata to be on the Part object.
-            // We spread ...rest (containing thought_signature) onto the Part object itself.
             parts.push({
               functionCall: {
                 name: name,
@@ -56,6 +74,7 @@ export class GeminiProvider implements LLMProvider {
           parts.push({
             functionResponse: {
               name: m.name,
+              // functionResponse expects 'response' field which can be object
               response: { content: m.content },
             },
           });

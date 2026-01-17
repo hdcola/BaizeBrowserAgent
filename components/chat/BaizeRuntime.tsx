@@ -6,8 +6,9 @@ import { BrowserTools, ToolsService } from "@/services/tools";
 export function useBaizeRuntime() {
   const { llmService, settings } = useAgent();
 
-  const adapter = {
-    run: async function* ({ messages, abortSignal }) {
+  const adapter = useMemo(() => ({
+    acceptAttachments: { type: "image/*" }, // Fallback hint
+    run: async function* ({ messages, abortSignal } : { messages: any[], abortSignal: AbortSignal }) {
       if (!llmService) {
         yield {
           content: [
@@ -18,27 +19,89 @@ export function useBaizeRuntime() {
       }
 
       // 1. Map messages to LLMService format
-      const history: Message[] = messages.map((m) => {
-        // Simple mapping for now - assumes text content
-        // TODO: Handle complex content (images, tool calls)
-        const textContent = m.content
-          .filter((c) => c.type === "text")
-          .map((c) => (c as any).text)
-          .join("\n");
+      if (messages.length > 0) {
+        // Debug incoming
+        // console.log("[BaizeRuntime] Incoming:", JSON.stringify(messages[messages.length - 1], null, 2));
+      }
+
+      const history: any[] = await Promise.all(messages.map(async (m: any) => {
+        // Merge attachments content into message content
+        const rawContentParts = [
+          ...(m.content || []),
+          ...(m.attachments || []).flatMap((a: any) => a.content || [])
+        ];
+
+        const contentParts = await Promise.all(rawContentParts.map(async (c: any) => {
+          if (c.type === "text") {
+            return { type: "text" as const, text: c.text };
+          } else if (c.type === "image") {
+            const img = c as any;
+            let data = img.data;
+            const file = img.file;
+            let url = img.url;
+
+            // Helper to convert Blob/File to Data URL
+            const blobToDataURL = async (blob: Blob): Promise<string> => {
+               return new Promise((resolve, reject) => {
+                   const reader = new FileReader();
+                   reader.onloadend = () => resolve(reader.result as string);
+                   reader.onerror = reject;
+                   reader.readAsDataURL(blob);
+               });
+            };
+
+            if (!url) {
+                try {
+                    if (file instanceof Blob) {
+                        url = await blobToDataURL(file);
+                    } else if (data instanceof Blob) {
+                        url = await blobToDataURL(data);
+                    } else if (data && typeof data === 'object' && !data.substring) {
+                         // ArrayBuffer handling
+                         try {
+                             const bytes = new Uint8Array(data);
+                             let binary = '';
+                             const len = bytes.byteLength;
+                             for (let i = 0; i < len; i++) {
+                                 binary += String.fromCharCode(bytes[i]);
+                             }
+                             const base64 = window.btoa(binary);
+                             url = `data:${img.mimeType || 'image/png'};base64,${base64}`;
+                         } catch (e) {
+                             console.error("[BaizeRuntime] Failed to convert buffer:", e);
+                         }
+                    } else if (typeof data === 'string') {
+                         if (data.startsWith('http') || data.startsWith('data:')) {
+                             url = data;
+                         } else {
+                             url = `data:${img.mimeType || 'image/png'};base64,${data}`;
+                         }
+                    }
+                } catch (e) {
+                     console.error("[BaizeRuntime] Failed to convert image source:", e);
+                }
+            }
+            
+            if (!url) {
+              return { type: "text" as const, text: "\n\n> [!WARNING]\n> **Image Failed**: Could not process attached image." };
+            }
+            return { type: "image_url" as const, image_url: { url } };
+          }
+          return null;
+        }));
 
         return {
           role: m.role as "user" | "assistant" | "system",
-          content: textContent,
-          // TODO: map tool calls from m.content if existing
+          content: contentParts.filter(Boolean) as any[],
         };
-      });
+      }));
 
       // 2. Stream from LLMService (Agent Loop)
       let currentMessages = [...history];
       let keepGenerating = true;
-      let maxSteps = settings.maxSteps || 30; // Use user setting or default
+      let maxSteps = settings.maxSteps || 30; 
       let lastIterationHadTools = false;
-      const allToolCallsForUI: any[] = []; // MOVED OUTSIDE: Persist ALL tool calls across loop iterations
+      const allToolCallsForUI: any[] = []; 
 
       while (keepGenerating && maxSteps > 0) {
         maxSteps--;
@@ -46,10 +109,7 @@ export function useBaizeRuntime() {
 
         try {
           const tools = BrowserTools;
-          console.log(
-            "[BaizeRuntime] Starting new stream iteration. Messages:",
-            currentMessages.length
-          );
+          console.log("[BaizeRuntime] New stream iteration");
           const stream = llmService.stream({
             messages: currentMessages,
             tools,
@@ -62,12 +122,11 @@ export function useBaizeRuntime() {
             if (abortSignal.aborted) return;
 
             if (chunk.content) {
-              // console.log("Yielding text chunk:", chunk.content);
               textBuffer += chunk.content;
               yield {
                 content: [
-                  ...allToolCallsForUI, // Keep tools at the top
-                  { type: "text", text: textBuffer }, // Text follows tools
+                  ...allToolCallsForUI, 
+                  { type: "text", text: textBuffer }, 
                 ],
               };
             }
@@ -81,15 +140,7 @@ export function useBaizeRuntime() {
                 if (tc.args) toolCallsMap[tc.id].args += tc.args;
               });
 
-              // Yield tool calls to the UI as they arrive
-              // CRITICAL: We must include ALL previous tool calls in the array
               if (chunk.toolCalls.length > 0) {
-                console.log(
-                  "[BaizeRuntime] Yielding tool calls to UI:",
-                  chunk.toolCalls.map((t) => t.name)
-                );
-
-                // Add new tool calls to the accumulated array
                 chunk.toolCalls.forEach((tc) => {
                   allToolCallsForUI.push({
                     type: "tool-call",
@@ -100,7 +151,6 @@ export function useBaizeRuntime() {
                 });
               }
 
-              // Yield the COMPLETE array (all tool calls so far + text)
               yield {
                 content: [
                   ...allToolCallsForUI,
@@ -112,7 +162,6 @@ export function useBaizeRuntime() {
 
           const toolCalls = Object.values(toolCallsMap);
           if (toolCalls.length > 0) {
-            // Append the Assistant's message (text + tool calls) to state
             currentMessages.push({
               role: "assistant",
               content: textBuffer,
@@ -120,39 +169,20 @@ export function useBaizeRuntime() {
             });
 
             for (const tc of toolCalls) {
-              console.log(
-                `[BaizeRuntime] Executing tool: ${tc.name} with args:`,
-                tc.args
-              );
-              // Execute the tool
-              // Note: We don't yield text here anymore as the user wants a dedicated UI
-              // which should be handled by the UI component rendering the 'tool-call' part of the message.
-              // However, useLocalRuntime expects us to yield something?
-              // Actually, we yielded the tool call part in the previous loop? NO.
-              // We need to yield the TOOL CALL itself if we want the UI to show it?
-              // The `chunk.toolCalls` handling above accumulates them but doesn't necessarily yield them to runtime?
-
-              // Let's first remove the text bubble.
+              console.log(`[BaizeRuntime] Executing tool: ${tc.name}`);
               const result = await ToolsService.executeTool(tc);
-              console.log(
-                `[BaizeRuntime] Tool Result for ${tc.name}:`,
-                result.slice(0, 200) + (result.length > 200 ? "..." : "")
-              );
+              console.log(`[BaizeRuntime] Tool Result: ${result.slice(0, 100)}...`);
 
-              // Update the UI state with the result
-              // Find the existing tool call in the array and attach the result
               const existingToolIndex = allToolCallsForUI.findIndex(
                 (t) => t.toolCallId === tc.id
               );
               if (existingToolIndex !== -1) {
                 allToolCallsForUI[existingToolIndex] = {
                   ...allToolCallsForUI[existingToolIndex],
-                  result: result, // Attach the full result here
+                  result: result, 
                 };
               }
 
-              // Yield the updated content with tools (now containing results) FIRST, then text
-              // Note: We DO NOT append the result to textBuffer anymore, as ToolUI will display it.
               yield {
                 content: [
                   ...allToolCallsForUI,
@@ -160,13 +190,12 @@ export function useBaizeRuntime() {
                 ],
               };
 
-              // Check for critical connection errors
               if (result.includes("Receiving end does not exist")) {
                 yield {
                   content: [
                     {
                       type: "text",
-                      text: "\n\n> [!WARNING]\n> **Connection Lost**: The extension is disconnected from the page. Please **REFRESH** the page to allow the extension to inject, then try again.",
+                      text: "\n\n> [!WARNING]\n> **Connection Lost**: The extension is disconnected from the page. Please **REFRESH** the page.",
                     },
                   ],
                 };
@@ -176,7 +205,7 @@ export function useBaizeRuntime() {
                 role: "tool",
                 content: result,
                 toolCallId: tc.id,
-                name: tc.name, // Required for Gemini functionResponse
+                name: tc.name,
               });
             }
             keepGenerating = true;
@@ -192,12 +221,7 @@ export function useBaizeRuntime() {
         }
       }
 
-      // CRITICAL: If the loop ended because of maxSteps but we just executed tools,
-      // we need ONE MORE call to get the final text response from the LLM.
       if (lastIterationHadTools && maxSteps <= 0) {
-        console.log(
-          "[BaizeRuntime] Loop ended with tools executed. Making final call for text response..."
-        );
         try {
           const stream = llmService.stream({
             messages: currentMessages,
@@ -223,7 +247,38 @@ export function useBaizeRuntime() {
         }
       }
     },
-  } satisfies ChatModelAdapter;
+  } as any), [llmService, settings]);
 
-  return useLocalRuntime(adapter);
+  const attachmentAdapter = useMemo(() => ({
+    accept: "image/*",
+    async add({ file }: { file: File }) {
+      return {
+        id: crypto.randomUUID(),
+        file,
+        type: "image" as const,
+        name: file.name,
+        contentType: file.type,
+        status: { type: "requires-action" as const, reason: "composer-send" as const },
+      };
+    },
+    async send(attachment: any) {
+      return {
+        ...attachment,
+        status: { type: "complete" as const },
+        content: [
+          {
+            type: "image",
+            file: attachment.file,
+          },
+        ],
+      };
+    },
+    async remove() {},
+  }), []);
+
+  return useLocalRuntime(adapter, {
+    adapters: {
+      attachments: attachmentAdapter,
+    },
+  } as any);
 }

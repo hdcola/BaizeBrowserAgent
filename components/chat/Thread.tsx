@@ -3,9 +3,43 @@ import {
   ComposerPrimitive,
   MessagePrimitive,
   useMessage,
+  useComposer,
+  useComposerRuntime,
 } from "@assistant-ui/react";
 import React from "react";
 import { ToolUI } from "./ToolUI";
+
+const AttachmentList = () => {
+  const attachments = useComposer((s) => s.attachments);
+  
+  if (!attachments || attachments.length === 0) return null;
+
+  return (
+    <div className="flex gap-3 p-2 overflow-x-auto">
+      {attachments.map((attachment, idx) => {
+        const src = attachment.content || (attachment.file ? URL.createObjectURL(attachment.file) : null);
+        const isImage = attachment.type === "image" || (attachment.file?.type?.startsWith("image/"));
+        
+        return (
+          <div key={idx} className="relative group w-20 h-20 shrink-0 rounded-md overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
+            {isImage && src ? (
+              <img
+                src={src as string}
+                alt="Attachment"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex items-center justify-center w-full h-full text-xs text-gray-500 bg-gray-50 dark:bg-gray-800 p-1 text-center break-words">
+                  {attachment.file?.name?.slice(0, 8) || "File"}...
+              </div>
+            )}
+             {/* Remove button placeholder */}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export const Thread = (props: any) => {
   return (
@@ -28,7 +62,7 @@ export const Thread = (props: any) => {
               if (!message) return null;
 
               // Special handling for tool outputs which are separate messages in assistant-ui (or mapped as such)
-              if (message.role === "tool") {
+              if ((message as any).role === "tool") {
                 return <ToolUI />;
               }
 
@@ -67,8 +101,17 @@ export const Thread = (props: any) => {
       </ThreadPrimitive.Viewport>
 
       <ComposerPrimitive.Root className="p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800">
-        <div className="relative flex items-end gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-xl border border-transparent focus-within:border-blue-500/50 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-          <ComposerPrimitive.Input
+        <div className="relative flex flex-col gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-xl border border-transparent focus-within:border-blue-500/50 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+          <AttachmentList />
+          
+          <div className="flex items-end gap-2">
+            <ComposerPrimitive.AddAttachment className="p-2 mb-0.5 rounded-lg text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+              </svg>
+            </ComposerPrimitive.AddAttachment>
+
+            <ComposerPrimitive.Input
             className="flex-1 max-h-32 min-h-[40px] bg-transparent border-none focus:ring-0 p-2 text-sm text-gray-800 dark:text-gray-100 resize-none placeholder-gray-400"
             placeholder="Ask anything..."
             rows={1}
@@ -88,7 +131,8 @@ export const Thread = (props: any) => {
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
-          </ComposerPrimitive.Send>
+            </ComposerPrimitive.Send>
+          </div>
         </div>
       </ComposerPrimitive.Root>
     </ThreadPrimitive.Root>

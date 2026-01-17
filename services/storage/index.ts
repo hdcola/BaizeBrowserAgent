@@ -21,8 +21,9 @@ const getDefaultLanguage = (): "zh_CN" | "en" => {
 const PROVIDER_CONFIG_KEY = "local:provider_config";
 
 export const defaultSettings: AppSettings = {
-  language: getDefaultLanguage(),
+  language: "en",
   theme: "system",
+  maxSteps: 30, // Default max steps
 };
 
 export const defaultProviderConfig: ModelConfig = {
